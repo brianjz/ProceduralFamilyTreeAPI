@@ -1,6 +1,6 @@
 using ProceduralFamilyTree;
 using static ProceduralFamilyTree.Utilities;
-using System.Text.Json;
+using Newtonsoft.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,14 +8,22 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.ConfigureSwaggerGen(setup =>
+{
+    setup.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "Procedural Family Tree",
+        Version = "v1"
+    });
+});
 
 var app = builder.Build();
 
 app.UseSwagger();
-app.UseSwaggerUI(c =>
+app.UseSwaggerUI(options =>
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Procedural Family Tree API V1");
-    c.RoutePrefix = string.Empty;
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Procedural Family Tree API V1");
+    options.RoutePrefix = string.Empty;
 });
 
 app.UseHttpsRedirection();
@@ -36,14 +44,23 @@ app.MapGet("/person/{year}", (int year) =>
 })
 .WithName("GetPersonByYear");
 
-app.MapGet("/family", () =>
+app.MapGet("/family", (int? generations = 1) =>
 {
     var family = Family.CreateNewRandomFamily();
 
-    var options = new JsonSerializerOptions();
-    options.Converters.Add(new DateOnlyConverter());
+    for (int x = 0; x < generations; x++)
+    {
+        foreach (Person child in family.Children)
+        {
+            Person spouse = new Person(child);
+            child.Family = Family.CreateFamily(child, spouse);
+            child.Family.CreateChildren();
+        }
+    }
+    family.AssignPersonNumbers(family.Husband);
 
-    var json = JsonSerializer.Deserialize<object>(JsonSerializer.Serialize(family, options));
+    var json = JsonConvert.SerializeObject(family, Formatting.Indented,
+        new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
 
     return json;
 })
@@ -53,10 +70,8 @@ app.MapGet("/family/{year}", (int year) =>
 {
     var family = Family.CreateNewRandomFamily(year);
 
-    var options = new JsonSerializerOptions();
-    options.Converters.Add(new DateOnlyConverter());
-
-    var json = JsonSerializer.Deserialize<object>(JsonSerializer.Serialize(family, options));
+    var json = JsonConvert.SerializeObject(family, Formatting.Indented,
+        new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
 
     return json;
 })

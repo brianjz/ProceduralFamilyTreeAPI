@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -14,11 +15,13 @@ namespace ProceduralFamilyTree
         public DateTime BirthDate { get; set; } = DateTime.MinValue;
         public DateTime DeathDate { get; set; } = DateTime.MinValue;
         public char Gender { get; set; }
-        [JsonIgnore]
         public Family? Family { get; set; } = null;
-        public int PersonID { get; set; } = 0;
-        private readonly Names names = new();
+        public string PersonNumber { get; set; } = string.Empty;
 
+        public Person()
+        {
+         
+        }
         /// <summary>
         /// Constructor to use to initiate all major attributes of a Person
         /// </summary>
@@ -32,7 +35,7 @@ namespace ProceduralFamilyTree
             LastName = lastName;
             BirthDate = birthDate;
             Gender = gender;
-            PersonID = PersonCounter.GetNext();
+            //PersonNumber = GetPersonNumber();
             if (DateTime.Now.Subtract(BirthDate).TotalDays / 365 > Utilities.MaxAge)
             {
                 DeathDate = new Utilities.RandomDateTime(BirthDate.AddYears(Utilities.RandomNumber(Utilities.MaxAge, 0)).Year).Next();
@@ -51,7 +54,7 @@ namespace ProceduralFamilyTree
             FirstName = Names.RandomFirstName(Gender, family);
             LastName = lastName;
             BirthDate = birthDate;
-            PersonID = PersonCounter.GetNext();
+            //PersonNumber = GetPersonNumber();
             if (DateTime.Now.Subtract(BirthDate).TotalDays / 365 > Utilities.MaxAge)
             {
                 DeathDate = new Utilities.RandomDateTime(BirthDate.AddYears(Utilities.RandomNumber(Utilities.MaxAge, 0)).Year).Next();
@@ -73,7 +76,7 @@ namespace ProceduralFamilyTree
             {
                 Gender = spouse.Gender == 'm' ? 'f' : 'm';
             }
-            else if(gender == '?')
+            else if (gender == '?')
             {
                 Gender = Utilities.RandomNumber(2) == 0 ? 'm' : 'f';
             }
@@ -84,12 +87,25 @@ namespace ProceduralFamilyTree
             FirstName = Names.RandomFirstName(Gender, Family);
             LastName = Names.RandomSurname();
             BirthDate = birthDate;
-            PersonID = PersonCounter.GetNext();
+            //PersonNumber = GetPersonNumber();
             int minAge = 0;
             if (spouse != null)
             {
                 minAge = Utilities.RandomNumber(spouse.Age() + 5, spouse.Age() - 5);
             }
+            if (DateTime.Now.Subtract(BirthDate).TotalDays / 365 > Utilities.MaxAge)
+            {
+                DeathDate = new Utilities.RandomDateTime(BirthDate.AddYears(Utilities.WeightedRandomNumber(0.8, 0.2, Utilities.MaxAge, minAge)).Year).Next();
+            }
+        }
+
+        public Person(Person spouse)
+        {
+            Gender = spouse.Gender == 'm' ? 'f' : 'm';
+            FirstName = Names.RandomFirstName(Gender, null);
+            LastName = Names.RandomSurname();
+            BirthDate = new Utilities.RandomDateTime(spouse.BirthDate.Year, 5).Next();
+            int minAge = Utilities.RandomNumber(spouse.Age() + 5, spouse.Age() - 5);
             if (DateTime.Now.Subtract(BirthDate).TotalDays / 365 > Utilities.MaxAge)
             {
                 DeathDate = new Utilities.RandomDateTime(BirthDate.AddYears(Utilities.WeightedRandomNumber(0.8, 0.2, Utilities.MaxAge, minAge)).Year).Next();
@@ -145,7 +161,7 @@ namespace ProceduralFamilyTree
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.Append("#" + PersonID);
+            sb.Append("#" + PersonNumber);
             sb.Append(" [" + Gender.ToString().ToUpper() + "] ");
             sb.Append(FullName());
             sb.Append(" (" + BirthDate.ToString("d") + " - ");
@@ -163,17 +179,5 @@ namespace ProceduralFamilyTree
             sb.Append(" - " + ageText + ": " + Age() + " years");
             return sb.ToString();
         }
-
-        //public override 
     }
-    public static class PersonCounter
-    {
-        private static int counter = 0;
-
-        public static int GetNext()
-        {
-            return ++counter;
-        }
-    }
-
 }

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -15,7 +16,6 @@ namespace ProceduralFamilyTree
         public Person Wife { get; set; }
         public DateTime MarriageDate { get; set; } = DateTime.MinValue;
         public List<Person> Children { get; set; }
-        public string Name { get; set; } = "Family";
         public int Generation { get; set; } = 0;
 
         /// <summary>
@@ -49,19 +49,22 @@ namespace ProceduralFamilyTree
             }
             else
             {
-                year = year - Utilities.MinMarriageAge + 3;
+                year = year - Utilities.MinMarriageAge - 3;
             }
             Person husband = new(new Utilities.RandomDateTime(year).Next(), 'm');
             Person wife = new(new Utilities.RandomDateTime(husband.BirthDate.Year, 5).Next(), 'f', husband);
 
             Family family = Family.CreateFamily(husband, wife);
+            family.Husband.PersonNumber = "1";
             family.CreateChildren();
+            family.AssignPersonNumbers(family.Husband);
 
             return family;
         }
 
-        public static Family CreateFamily(Person spouse1, Person spouse2, DateTime? marriageDate = null)
+        public static Family CreateFamily(Person spouse1, Person? spouse2, DateTime? marriageDate = null)
         {
+
             if (spouse1.Gender == spouse2.Gender) // Same genders cannot marry at this point, will implement
             {
                 return null;
@@ -128,8 +131,7 @@ namespace ProceduralFamilyTree
 
         public void CreateChildren(int maxNumChildren = 0)
         {
-            if (maxNumChildren == 0)
-                maxNumChildren = Utilities.MaxNumberOfKids;
+            maxNumChildren = maxNumChildren == 0 ? Utilities.MaxNumberOfKids : maxNumChildren;
             for (var i = 0; i < Utilities.WeightedRandomNumber(0.8, 0.2, maxNumChildren, 0); i++)
             {
                 CreateChild();
@@ -139,17 +141,7 @@ namespace ProceduralFamilyTree
 
         public int numberOfMarriableChildren()
         {
-            int num = 0;
-
-            foreach (var child in Children)
-            {
-                if (child.Age() >= Utilities.MinMarriageAge)
-                {
-                    num++;
-                }
-            }
-
-            return num;
+            return Children.Count(child => child.Age() >= Utilities.MinMarriageAge);
         }
 
         public int numberOfDescendants(Person? descendant = null)
@@ -250,13 +242,24 @@ namespace ProceduralFamilyTree
             return names;
         }
 
-        public string OutputFamily()
+        public void AssignPersonNumbers(Person person, string parentNumber = "")
         {
-            string output = "";
+            if (string.IsNullOrEmpty(parentNumber))
+            {
+                person.PersonNumber = "1";
+            }
+            else
+            {
+                person.PersonNumber = parentNumber;
+            }
 
-            var husband = JsonSerializer.Serialize(Husband);
-
-            return output;
+            if (person.HasOwnFamily() && person.Family != null)
+            {
+                for (int i = 0; i < person.Family.Children.Count; i++)
+                {
+                    AssignPersonNumbers(person.Family.Children[i], person.PersonNumber + "." + (i + 1).ToString());
+                }
+            }
         }
     }
 }

@@ -5,7 +5,7 @@ namespace ProceduralFamilyTree
 {
     public class Utilities
     {
-        private static readonly Random _rnd = new();
+        private static readonly Random _rnd = new(5665);
         public static int YearsBetweenChildren { get; set; } = 5;
         public static int MaxNumberOfKids { get; set; } = 10;
         public static int MinMarriageAge { get; set; } = 18;
