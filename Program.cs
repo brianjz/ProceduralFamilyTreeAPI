@@ -1,6 +1,7 @@
 using ProceduralFamilyTree;
 using static ProceduralFamilyTree.Utilities;
 using Newtonsoft.Json;
+using System.Runtime.CompilerServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,22 +45,16 @@ app.MapGet("/person/{year}", (int year) =>
 })
 .WithName("GetPersonByYear");
 
-app.MapGet("/family", (int? generations = 1) =>
+app.MapGet("/family", (int? generations) =>
 {
-    var family = Family.CreateNewRandomFamily();
+    var primaryFamily = Family.CreateNewRandomFamily();
 
-    for (int x = 0; x < generations; x++)
-    {
-        foreach (Person child in family.Children)
-        {
-            Person spouse = new Person(child);
-            child.Family = Family.CreateFamily(child, spouse);
-            child.Family.CreateChildren();
-        }
-    }
-    family.AssignPersonNumbers(family.Husband);
+    generations ??= 0;
+    primaryFamily.CreateGenerations((int)generations);
 
-    var json = JsonConvert.SerializeObject(family, Formatting.Indented,
+    primaryFamily.AssignPersonNumbers(primaryFamily.Husband);
+
+    var json = JsonConvert.SerializeObject(primaryFamily, Formatting.Indented,
         new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
 
     return json;

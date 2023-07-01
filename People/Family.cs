@@ -1,6 +1,7 @@
 ﻿using ProceduralFamilyTree;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -16,7 +17,6 @@ namespace ProceduralFamilyTree
         public Person Wife { get; set; }
         public DateTime MarriageDate { get; set; } = DateTime.MinValue;
         public List<Person> Children { get; set; }
-        public int Generation { get; set; } = 0;
 
         /// <summary>
         /// Constructor used if you want to set all spouses with marriage date.
@@ -101,6 +101,26 @@ namespace ProceduralFamilyTree
             }
             return null;
         }
+
+        public void CreateGenerations(int generations = 0) {
+            if (generations > 0)
+            {
+                for (int i = 0; i < generations; i++)
+                {
+                    foreach (Person child in Children)
+                    {
+                        if (child.Age() > Utilities.MinMarriageAge && child.Age(DateTime.Now.Year) > Utilities.MinMarriageAge)
+                        {
+                            Person spouse = new Person(child);
+                            child.Family = CreateFamily(child, spouse);
+                            child.Family.CreateChildren();
+                            child.Family.CreateGenerations(generations - 1);
+                        }
+                    }
+                }
+            }
+        }
+
 
         public void AddChild(Person child)
         {
