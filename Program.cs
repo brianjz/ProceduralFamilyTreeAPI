@@ -29,7 +29,7 @@ app.UseSwaggerUI(options =>
 {
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "Procedural Family Tree API V1");
     options.RoutePrefix = string.Empty;
-    options.DocumentTitle = "Procedureal Family Tree v1.0";
+    options.DocumentTitle = "Procedural Family Tree v1.0";
 });
 
 app.UseHttpsRedirection();
