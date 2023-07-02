@@ -2,13 +2,17 @@ using ProceduralFamilyTree;
 using static ProceduralFamilyTree.Utilities;
 using Newtonsoft.Json;
 using System.Runtime.CompilerServices;
+using Swashbuckle.AspNetCore.Annotations;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.EnableAnnotations();
+});
 builder.Services.ConfigureSwaggerGen(setup =>
 {
     setup.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
@@ -25,31 +29,26 @@ app.UseSwaggerUI(options =>
 {
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "Procedural Family Tree API V1");
     options.RoutePrefix = string.Empty;
+    options.DocumentTitle = "Procedureal Family Tree v1.0";
 });
 
 app.UseHttpsRedirection();
 
-app.MapGet("/person", () =>
+app.MapGet("/person", (int? birthYear) =>
 {
-    Person person = new(new Utilities.RandomDateTime(1850, 150).Next(), '?');
+    Person person = birthYear == null ? new(new Utilities.RandomDateTime(1850, 150).Next(), '?') : new(new Utilities.RandomDateTime((int)birthYear).Next(), '?');
 
     return person;
 })
 .WithName("GetPerson");
 
-app.MapGet("/person/{year}", (int year) =>
+app.MapGet("/family", (int? marriageYear, int? generations) =>
 {
-    Person person = new(new Utilities.RandomDateTime(year).Next(), '?');
-
-    return person;
-})
-.WithName("GetPersonByYear");
-
-app.MapGet("/family", (int? generations) =>
-{
-    var primaryFamily = Family.CreateNewRandomFamily();
+    marriageYear ??= 0;
+    var primaryFamily = Family.CreateNewRandomFamily((int)marriageYear);
 
     generations ??= 0;
+    generations = generations > 5 ? 5 : generations;
     primaryFamily.CreateGenerations((int)generations);
 
     primaryFamily.AssignPersonNumbers(primaryFamily.Husband);
@@ -59,17 +58,7 @@ app.MapGet("/family", (int? generations) =>
 
     return json;
 })
-.WithName("GetFamily");
-
-app.MapGet("/family/{year}", (int year) =>
-{
-    var family = Family.CreateNewRandomFamily(year);
-
-    var json = JsonConvert.SerializeObject(family, Formatting.Indented,
-        new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
-
-    return json;
-})
-.WithName("GetFamilyByYear");
+.WithName("GetFamily")
+.WithMetadata(new SwaggerOperationAttribute(summary: "Generate Family", description: "Generate a nested family JSON object with set number of generations (currently up to 5)."));
 
 app.Run();

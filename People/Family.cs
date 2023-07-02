@@ -43,14 +43,7 @@ namespace ProceduralFamilyTree
 
         public static Family CreateNewRandomFamily(int year = 0)
         {
-            if(year == 0)
-            {
-                year = Utilities.RandomNumber(1950, 1850);
-            }
-            else
-            {
-                year = year - Utilities.MinMarriageAge - 3;
-            }
+            year = year == 0 ? Utilities.RandomNumber(1950, 1850) : year - Utilities.MinMarriageAge - 3;
             Person husband = new(new Utilities.RandomDateTime(year).Next(), 'm');
             Person wife = new(new Utilities.RandomDateTime(husband.BirthDate.Year, 5).Next(), 'f', husband);
 
@@ -113,8 +106,11 @@ namespace ProceduralFamilyTree
                         {
                             Person spouse = new Person(child);
                             child.Family = CreateFamily(child, spouse);
-                            child.Family.CreateChildren();
-                            child.Family.CreateGenerations(generations - 1);
+                            if (child.Family != null)
+                            {
+                                child.Family.CreateChildren();
+                                child.Family.CreateGenerations(generations - 1);
+                            }
                         }
                     }
                 }
@@ -273,7 +269,7 @@ namespace ProceduralFamilyTree
                 person.PersonNumber = parentNumber;
             }
 
-            if (person.HasOwnFamily() && person.Family != null)
+            if (person.Family != null && person.HasOwnFamily())
             {
                 for (int i = 0; i < person.Family.Children.Count; i++)
                 {
