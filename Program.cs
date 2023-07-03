@@ -1,5 +1,4 @@
 using ProceduralFamilyTree;
-using static ProceduralFamilyTree.Utilities;
 using Newtonsoft.Json;
 using System.Runtime.CompilerServices;
 using Swashbuckle.AspNetCore.Annotations;

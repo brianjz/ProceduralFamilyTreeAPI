@@ -13,15 +13,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Names\FemaleNames.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Names\MaleNames.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Names\Surnames.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <Reference Include="ProceduralFamilyTree">
+      <HintPath>..\ProceduralFamilyTree\bin\Debug\net6.0\ProceduralFamilyTree.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>
