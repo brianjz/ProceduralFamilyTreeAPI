@@ -33,25 +33,50 @@ app.UseSwaggerUI(options =>
 
 app.UseHttpsRedirection();
 
-app.MapGet("/person", (int? birthYear) =>
+app.MapGet("/person", (int? birthYear, int? seed) =>
 {
+    if (seed != null) {
+        Utilities.SetSeed((int)seed);
+    }
+
     Person person = birthYear == null ? new(new Utilities.RandomDateTime(1850, 150).Next(), '?') : new(new Utilities.RandomDateTime((int)birthYear).Next(), '?');
 
     return person;
 })
 .WithName("GetPerson");
 
-app.MapGet("/family", (int? marriageYear, int? generations) =>
+app.MapGet("/people", (int? birthYear, int? count, int? seed) =>
 {
+    if (seed != null) {
+        Utilities.SetSeed((int)seed);
+    }
+    count ??= 1;
+
+    var people = new List<Person>();
+    for(int x = 0; x < count; x++) {
+        Person person = birthYear == null ? new(new Utilities.RandomDateTime(1850, 150).Next(), '?') : new(new Utilities.RandomDateTime((int)birthYear).Next(), '?');
+        people.Add(person);
+    }
+
+    return people;
+})
+.WithName("GetPeople");
+
+app.MapGet("/family", (int? marriageYear, int? generations, int? seed) =>
+{
+    if (seed != null) {
+        Utilities.SetSeed((int)seed);
+    }
     marriageYear ??= 0;
-    var primaryFamily = Family.CreateNewRandomFamily((int)marriageYear);
+    Family? primaryFamily = Family.CreateNewRandomFamily((int)marriageYear);
 
-    generations ??= 0;
-    generations = generations > 5 ? 5 : generations;
-    primaryFamily.CreateGenerations((int)generations);
+    if(primaryFamily != null) {
+        generations ??= 0;
+        generations = generations > 5 ? 5 : generations;
+        primaryFamily.CreateGenerations((int)generations);
 
-    primaryFamily.AssignPersonNumbers(primaryFamily.Husband);
-
+        primaryFamily.AssignPersonNumbers(primaryFamily.Husband);
+    }
     var json = JsonConvert.SerializeObject(primaryFamily, Formatting.Indented,
         new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
 
