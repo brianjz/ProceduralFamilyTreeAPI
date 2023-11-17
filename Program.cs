@@ -62,13 +62,14 @@ app.MapGet("/people", (int? birthYear, int? count, int? seed) =>
 })
 .WithName("GetPeople");
 
-app.MapGet("/family", (int? marriageYear, int? generations, int? seed) =>
+app.MapGet("/family", (int? marriageYear, int? generations, int? seed, string? surname) =>
 {
     if (seed != null) {
         Utilities.SetSeed((int)seed);
     }
+    surname ??= "";
     marriageYear ??= 0;
-    Family? primaryFamily = Family.CreateNewRandomFamily((int)marriageYear);
+    Family? primaryFamily = Family.CreateNewRandomFamily((int)marriageYear, surname);
 
     if(primaryFamily != null) {
         generations ??= 0;
