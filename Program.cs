@@ -1,6 +1,5 @@
 using ProceduralFamilyTree;
 using Newtonsoft.Json;
-using System.Runtime.CompilerServices;
 using Swashbuckle.AspNetCore.Annotations;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -71,14 +70,58 @@ app.MapGet("/family", (int? marriageYear, int? generations, int? seed, string? s
     marriageYear ??= 0;
     Family? primaryFamily = Family.CreateNewRandomFamily((int)marriageYear, surname);
 
+    var op = new Output();
+
     if(primaryFamily != null) {
         generations ??= 0;
-        generations = generations > 5 ? 5 : generations;
+        generations = generations > 10 ? 10 : generations;
         primaryFamily.CreateGenerations((int)generations);
 
         primaryFamily.AssignPersonNumbers(primaryFamily.Husband);
+
+        Person earliestBirth = primaryFamily.Husband.BirthDate >= primaryFamily.Wife.BirthDate ? primaryFamily.Husband : primaryFamily.Wife;
+        Person longestLiving = primaryFamily.Husband.Age >= primaryFamily.Wife.Age ? primaryFamily.Husband : primaryFamily.Wife;
+        Person oldestLiving = primaryFamily.Husband;
+        Person latestBirth = primaryFamily.Husband.BirthDate <= primaryFamily.Wife.BirthDate ? primaryFamily.Husband : primaryFamily.Wife;
+        var surnames = new Dictionary<string, int> {
+            { primaryFamily.Wife.LastName, 1 }
+        };
+        foreach(Person per in primaryFamily.Husband.GetNestedChildren()) {
+            earliestBirth = per.BirthDate > earliestBirth.BirthDate ? earliestBirth : per;
+            longestLiving = per.Age > longestLiving.Age ? per : longestLiving;
+            // if(per.IsAlive() && )
+            latestBirth = per.BirthDate < latestBirth.BirthDate ? latestBirth : per;
+            if (surnames.ContainsKey(per.LastName))
+            {
+                surnames[per.LastName]++;
+            }
+            else
+            {
+                surnames[per.LastName] = 1;
+            }
+        }
+        string mcs = string.Empty;
+        int mcsNum = surnames.MaxBy(pair => pair.Value).Value;
+        // surnames.TryGetValue(mcs, out int numMCS);
+        var mcsItems = surnames.Where(pair => pair.Value == mcsNum).Select(pair => pair.Key).ToList();
+        foreach(string mcsName in mcsItems) {
+            surnames.TryGetValue(mcsName, out int numMCS);
+            mcs += $"{mcsName} ({numMCS}), ";
+        }
+        mcs = mcs[..^2];
+
+        op = new Output {
+            MainFamily = primaryFamily,
+            EarliestBirth = earliestBirth.ToString(),
+            LongestLiving = longestLiving.ToString(),
+            OldestLiving = oldestLiving.ToString(),
+            LatestBirth = latestBirth.ToString(),
+            MostCommonSurname = mcs,
+            TotalPersons = primaryFamily.NumDescendants
+        };
     }
-    var json = JsonConvert.SerializeObject(primaryFamily, Formatting.Indented,
+
+    var json = JsonConvert.SerializeObject(op, Formatting.Indented,
         new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
 
     return json;
@@ -87,3 +130,14 @@ app.MapGet("/family", (int? marriageYear, int? generations, int? seed, string? s
 .WithMetadata(new SwaggerOperationAttribute(summary: "Generate Family", description: "Generate a nested family JSON object with set number of generations (currently up to 5)."));
 
 app.Run();
+
+class Output {
+    public Family MainFamily {get; set;} = null!;
+
+    public string EarliestBirth {get; set;} = string.Empty;
+    public string LongestLiving {get;set;} = string.Empty;
+    public string OldestLiving {get;set;} = string.Empty;
+    public string LatestBirth {get; set;} = string.Empty;
+    public string MostCommonSurname {get; set;} = string.Empty;
+    public int TotalPersons {get; set;} = 0;
+}
