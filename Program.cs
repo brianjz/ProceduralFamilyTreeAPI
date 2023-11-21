@@ -63,9 +63,8 @@ app.MapGet("/people", (int? birthYear, int? count, int? seed) =>
 
 app.MapGet("/family", (int? marriageYear, int? generations, int? seed, string? surname) =>
 {
-    if (seed != null) {
-        Utilities.SetSeed((int)seed);
-    }
+    seed ??= new Random().Next();
+    Utilities.SetSeed((int)seed);
     surname ??= "";
     marriageYear ??= 0;
     Family? primaryFamily = Family.CreateNewRandomFamily((int)marriageYear, surname);
@@ -82,6 +81,7 @@ app.MapGet("/family", (int? marriageYear, int? generations, int? seed, string? s
         Person earliestBirth = primaryFamily.Husband.BirthDate >= primaryFamily.Wife.BirthDate ? primaryFamily.Husband : primaryFamily.Wife;
         Person longestLiving = primaryFamily.Husband.Age >= primaryFamily.Wife.Age ? primaryFamily.Husband : primaryFamily.Wife;
         Person oldestLiving = primaryFamily.Husband;
+        int oldestLivingAge = 0;
         Person latestBirth = primaryFamily.Husband.BirthDate <= primaryFamily.Wife.BirthDate ? primaryFamily.Husband : primaryFamily.Wife;
         var surnames = new Dictionary<string, int> {
             { primaryFamily.Wife.LastName, 1 }
@@ -89,7 +89,10 @@ app.MapGet("/family", (int? marriageYear, int? generations, int? seed, string? s
         foreach(Person per in primaryFamily.Husband.GetNestedChildren()) {
             earliestBirth = per.BirthDate > earliestBirth.BirthDate ? earliestBirth : per;
             longestLiving = per.Age > longestLiving.Age ? per : longestLiving;
-            // if(per.IsAlive() && )
+            if(per.IsAlive() && per.Age > oldestLivingAge) {
+                oldestLiving = per;
+                oldestLivingAge = per.Age;
+            }
             latestBirth = per.BirthDate < latestBirth.BirthDate ? latestBirth : per;
             if (surnames.ContainsKey(per.LastName))
             {
@@ -117,7 +120,8 @@ app.MapGet("/family", (int? marriageYear, int? generations, int? seed, string? s
             OldestLiving = oldestLiving.ToString(),
             LatestBirth = latestBirth.ToString(),
             MostCommonSurname = mcs,
-            TotalPersons = primaryFamily.NumDescendants
+            TotalPersons = primaryFamily.NumDescendants,
+            Seed = seed
         };
     }
 
@@ -140,4 +144,5 @@ class Output {
     public string LatestBirth {get; set;} = string.Empty;
     public string MostCommonSurname {get; set;} = string.Empty;
     public int TotalPersons {get; set;} = 0;
+    public int? Seed {get; set;} = 0;
 }
