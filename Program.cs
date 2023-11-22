@@ -80,7 +80,7 @@ app.MapGet("/family", (int? marriageYear, int? generations, int? seed, string? s
 
         Person earliestBirth = primaryFamily.Husband.BirthDate >= primaryFamily.Wife.BirthDate ? primaryFamily.Husband : primaryFamily.Wife;
         Person longestLiving = primaryFamily.Husband.Age >= primaryFamily.Wife.Age ? primaryFamily.Husband : primaryFamily.Wife;
-        Person oldestLiving = primaryFamily.Husband;
+        Person? oldestLiving = null;
         int oldestLivingAge = 0;
         Person latestBirth = primaryFamily.Husband.BirthDate <= primaryFamily.Wife.BirthDate ? primaryFamily.Husband : primaryFamily.Wife;
         var surnames = new Dictionary<string, int> {
@@ -117,10 +117,10 @@ app.MapGet("/family", (int? marriageYear, int? generations, int? seed, string? s
             MainFamily = primaryFamily,
             EarliestBirth = earliestBirth.ToString(),
             LongestLiving = longestLiving.ToString(),
-            OldestLiving = oldestLiving.ToString(),
+            OldestLiving = oldestLiving != null ? oldestLiving.ToString() : "N/A",
             LatestBirth = latestBirth.ToString(),
             MostCommonSurname = mcs,
-            TotalPersons = primaryFamily.NumDescendants,
+            TotalPersons = primaryFamily.NumberOfDescendants(primaryFamily.Husband, true),
             Seed = seed
         };
     }
