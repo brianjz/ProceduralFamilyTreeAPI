@@ -19,9 +19,19 @@ builder.Services.ConfigureSwaggerGen(setup =>
         Version = "v1"
     });
 });
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(builder =>
+    {
+        builder.AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+    });
+});
 
 var app = builder.Build();
 
+app.UseCors();
 app.UseSwagger();
 app.UseSwaggerUI(options =>
 {
@@ -127,8 +137,8 @@ app.MapGet("/family", (int? marriageYear, int? generations, int? seed, string? s
 
     var json = JsonConvert.SerializeObject(op, Formatting.Indented,
         new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
-
-    return json;
+    return Results.Content(json, contentType: "application/json");   
+    // return json;
 })
 .WithName("GetFamily")
 .WithMetadata(new SwaggerOperationAttribute(summary: "Generate Family", description: "Generate a nested family JSON object with set number of generations (currently up to 5)."));
